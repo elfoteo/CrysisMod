@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "package": "com.elfoteo.crysis.mixin",
+    "compatibilityLevel": "JAVA_8",
+    "client": [
+        "AgeableModelRenderInject",
+        "ModelRenderInject"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "refmap": "crysis.mixin-refmap.json"
+}
