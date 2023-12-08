@@ -9,6 +9,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
@@ -27,6 +28,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.*;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector2f;
 import net.minecraft.util.math.vector.Vector3d;
@@ -97,7 +99,7 @@ public class CrysisMod {
     }
 
     public static void renderSquare(MatrixStack matrixStack, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, int red, int green, int blue, RenderType renderType,
-                                    float xRot, float yRot, float zRot, double x, double y, double z, boolean first)
+                                    float xRot, float yRot, float zRot, double x, double y, double z)
     {
         IRenderTypeBuffer.Impl buffer = Minecraft.getInstance().renderBuffers().bufferSource();
         IVertexBuilder builder = buffer.getBuffer(renderType);
@@ -106,7 +108,7 @@ public class CrysisMod {
 
         Vector3d cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
-        matrixStack.translate(-cam.x+x, -cam.y+y, -cam.z+z);
+        matrixStack.translate(cam.x+x, cam.y+y, cam.z+z);
 
         if (zRot != 0.0F) {
             matrixStack.mulPose(Vector3f.ZP.rotation(zRot));
@@ -201,6 +203,18 @@ public class CrysisMod {
 
         @SubscribeEvent
         public static void onRenderWorldLastEvent(RenderWorldLastEvent event) {
+            RenderType glowing = RenderType.create("outline", DefaultVertexFormats.POSITION_COLOR, 7, 256,
+                    RenderType.State.builder()
+                            .setCullState(NO_CULL)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .setAlphaState(DEFAULT_ALPHA)
+                            .setTexturingState(OUTLINE_TEXTURING)
+                            .setFogState(NO_FOG)
+                            .setOutputState(OUTLINE_TARGET)
+                            .createCompositeState(true));
+
+            renderSquare(event.getMatrixStack(), 0, 0, 0, 1, 2, 1, 0, 0, 175, glowing, 0, 0, 0, 0, 0, 0);
+
             // Get the player's world and the overworld
             World world = Minecraft.getInstance().level;  // Adjust to the appropriate dimension
             World overworld = ServerLifecycleHooks.getCurrentServer().getLevel(World.OVERWORLD);
@@ -210,76 +224,70 @@ public class CrysisMod {
                 // Get a list of all players in the world
                 List<? extends PlayerEntity> players = world.players();
 
-                // Iterate over each player in the world
-                for (PlayerEntity player : players) {
-                    // Get nearby living entities within a certain range
-                    List<? extends LivingEntity> nearbyEntities = overworld.getNearbyEntities(
-                            LivingEntity.class,
-                            new EntityPredicate(),
-                            player,
-                            player.getBoundingBox().inflate(35.0)
-                    );
+                ClientPlayerEntity player = Minecraft.getInstance().player;
 
-                    // Get the Nanosuit mode capability of the player
-                    INanosuitModeCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                // Get nearby living entities within a certain range
+                List<? extends LivingEntity> nearbyEntities = overworld.getNearbyEntities(
+                        LivingEntity.class,
+                        new EntityPredicate(),
+                        player,
+                        player.getBoundingBox().inflate(35.0)
+                );
 
-                    // Iterate over each nearby living entity
-                    for (LivingEntity livingEntity : nearbyEntities) {
-                        // Check if the Nanosuit is in VISOR mode, the entity is not the player itself, and it's an AgeableEntity
-                        if (nanosuitCapability.getMode() == NanosuitModes.VISOR
-                                && !livingEntity.getStringUUID().equals(player.getStringUUID())
-                                && livingEntity instanceof AgeableEntity) {
+                // Get the Nanosuit mode capability of the player
+                INanosuitModeCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
 
-                            // Get the entity renderer and create a glowing render type
-                            EntityRendererManager renderManager = Minecraft.getInstance().getEntityRenderDispatcher();
-                            RenderType glowing = RenderType.create("outline", DefaultVertexFormats.POSITION_COLOR, 7, 256,
-                                    RenderType.State.builder()
-                                            .setCullState(NO_CULL)
-                                            .setDepthTestState(NO_DEPTH_TEST)
-                                            .setAlphaState(DEFAULT_ALPHA)
-                                            .setTexturingState(OUTLINE_TEXTURING)
-                                            .setFogState(NO_FOG)
-                                            .setOutputState(OUTLINE_TARGET)
-                                            .createCompositeState(true));
+                // Iterate over each nearby living entity
+                for (LivingEntity livingEntity : nearbyEntities) {
+                    // Check if the Nanosuit is in VISOR mode, the entity is not the player itself, and it's an AgeableEntity
+                    if (nanosuitCapability.getMode() == NanosuitModes.VISOR && !livingEntity.getStringUUID().equals(player.getStringUUID())) {
 
-                            EntityRenderer entityRenderer = renderManager.getRenderer(livingEntity);
+                        // Get the entity renderer and create a glowing render type
+                        EntityRendererManager renderManager = Minecraft.getInstance().getEntityRenderDispatcher();
 
-                            // Check if the entity renderer is a LivingRenderer
-                            if (entityRenderer instanceof LivingRenderer) {
-                                LivingRenderer livingRenderer = (LivingRenderer) entityRenderer;
-                                EntityModel entityModel = livingRenderer.getModel();
+                        EntityRenderer entityRenderer = renderManager.getRenderer(livingEntity);
 
-                                // Check if the entity model is an AgeableModel
-                                if (entityModel instanceof AgeableModel) {
-                                    AgeableModel ageableModel = (AgeableModel) entityModel;
+                        // Check if the entity renderer is a LivingRenderer
+                        if (entityRenderer instanceof LivingRenderer) {
+                            LivingRenderer livingRenderer = (LivingRenderer) entityRenderer;
+                            EntityModel entityModel = livingRenderer.getModel();
 
-                                    // Check if the entity model implements AgeableModelInterface
-                                    if (ageableModel instanceof AgeableModelInterface) {
-                                        AgeableModelInterface ageableModelInterface = (AgeableModelInterface) ageableModel;
+                            // Check if the entity model is an AgeableModel
+                            if (entityModel instanceof AgeableModel) {
+                                AgeableModel ageableModel = (AgeableModel) entityModel;
 
-                                        // Iterate over each head part and render the model box
-                                        for (ModelRenderer headPart : ageableModelInterface.getHeadParts()) {
-                                            renderModelBox(headPart, event.getMatrixStack(), glowing,
-                                                    livingEntity.getX(), livingEntity.getY(), livingEntity.getZ(), true);
-                                        }
+                                // Check if the entity model implements AgeableModelInterface
+                                if (ageableModel instanceof AgeableModelInterface) {
+                                    AgeableModelInterface ageableModelInterface = (AgeableModelInterface) ageableModel;
 
-                                        // Iterate over each body part and render the model box
-                                        for (ModelRenderer bodyPart : ageableModelInterface.getBodyParts()) {
-                                            renderModelBox(bodyPart, event.getMatrixStack(), glowing,
-                                                    livingEntity.getX(), livingEntity.getY(), livingEntity.getZ(), true);
-                                        }
+                                    event.getMatrixStack().scale(-1f, -1f, -1f);
+
+                                    // Iterate over each head part and render the model box
+                                    for (ModelRenderer headPart : ageableModelInterface.getHeadParts()) {
+                                        renderModelBox(headPart, event.getMatrixStack(), glowing,
+                                                -livingEntity.getX(), -livingEntity.getY()-ageableModelInterface.getBodyYOffset()/16, -livingEntity.getZ());
                                     }
+
+                                    // Iterate over each body part and render the model box
+                                    for (ModelRenderer bodyPart : ageableModelInterface.getBodyParts()) {
+                                        renderModelBox(bodyPart, event.getMatrixStack(), glowing,
+                                                -livingEntity.getX(), -livingEntity.getY()-ageableModelInterface.getBodyYOffset()/16, -livingEntity.getZ());
+                                    }
+                                    // The entire entity gets rendered upside down
+
+                                    event.getMatrixStack().scale(-1f, -1f, -1f);
                                 }
                             }
                         }
                     }
+
                 }
             }
         }
 
         // Method to render a model box
         public static void renderModelBox(ModelRenderer modelRenderer, MatrixStack matrixStack, RenderType renderType,
-                                          double x, double y, double z, boolean first) {
+                                          double x, double y, double z) {
             // Check if the model renderer implements ModelRendererInterface
             ModelRendererInterface modelRendererInterface = (ModelRendererInterface) modelRenderer;
 
@@ -287,17 +295,16 @@ public class CrysisMod {
             for (ModelRenderer.ModelBox modelBox : modelRendererInterface.forge1_16_5Test$getCubes()) {
                 CrysisMod.renderSquare(
                         matrixStack,
-                        modelBox.maxX / 16, modelBox.maxY / 16, modelBox.maxZ / 16,
                         modelBox.minX / 16, modelBox.minY / 16, modelBox.minZ / 16,
+                        modelBox.maxX / 16, modelBox.maxY / 16, modelBox.maxZ / 16,
                         200, 50, 50, renderType,
                         modelRenderer.xRot, modelRenderer.yRot, modelRenderer.zRot,
-                        x + modelRenderer.x / 16, y + modelRenderer.y / 16, z + modelRenderer.z / 16,
-                        first);  // <-- gets rendered upside down
+                        x + modelRenderer.x / 16, y + modelRenderer.y / 16, z + modelRenderer.z / 16);
             }
 
             // Iterate over each child model and recursively call renderModelBox
             for (ModelRenderer childModel : modelRendererInterface.forge1_16_5Test$getChildren()) {
-                renderModelBox(childModel, matrixStack, renderType, x + modelRenderer.x / 16, y + modelRenderer.y / 16, z + modelRenderer.z / 16, false);
+                renderModelBox(childModel, matrixStack, renderType, x + modelRenderer.x / 16, y + modelRenderer.y / 16, z + modelRenderer.z / 16);
             }
         }
     }
