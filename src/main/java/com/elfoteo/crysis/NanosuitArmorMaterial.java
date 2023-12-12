@@ -49,4 +49,6 @@ public class NanosuitArmorMaterial implements IArmorMaterial {
     public float getKnockbackResistance() {
         return 0.0F;
     }
+
+
 }

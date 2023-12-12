@@ -1,51 +1,72 @@
 package com.elfoteo.crysis;
 
-import com.elfoteo.crysis.capability.INanosuitModeCapability;
+import com.elfoteo.crysis.capability.INanosuitCapability;
 import com.elfoteo.crysis.capability.NanosuitModeProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.IntNBT;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 
-@Mod(CrysisMod.MOD_ID)
 @EventBusSubscriber(modid = CrysisMod.MOD_ID, value = Dist.CLIENT, bus = Bus.FORGE)
 public class KeyPressHandler {
 
-    private static boolean isKeyPressed = false;
+    private static boolean cyclePowerKeyPressed = false;
+    private static boolean toggleVisorKeyPressed = false;
+    private static NanosuitModes oldMode = NanosuitModes.IDLE;
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            // Check for keypress, for example, the 'K' key (change as needed)
-            if (CrysisMod.CYCLE_POWER.isDown()) {
-                // Key is pressed
-                if (!isKeyPressed) {
-                    // Key was not pressed in the previous tick
-                    onKeyPress();
+            if (CrysisMod.TOGGLE_VISOR.isDown()){
+                toggleVisorKeyPressed = true;
+                toggleVisorDown();
+            }
+            else{
+                // On key released
+                if (toggleVisorKeyPressed) {
+                    PlayerEntity player = Minecraft.getInstance().player;
+                    if (player != null) {
+                        INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                        nanosuitCapability.setMode(oldMode);
+                    }
                 }
-                isKeyPressed = true;
-            } else {
-                // Key is not pressed
-                isKeyPressed = false;
+                toggleVisorKeyPressed = false;
+                if (CrysisMod.CYCLE_POWER.isDown()) {
+                    // Key is pressed
+                    if (!cyclePowerKeyPressed) {
+                        // Key was not pressed in the previous tick
+                        cyclePowerPress();
+                    }
+                    cyclePowerKeyPressed = true;
+                } else {
+                    // Key is not pressed
+                    cyclePowerKeyPressed = false;
+                }
             }
         }
     }
 
-    private static void onKeyPress() {
-        // Handle the keypress here
+    private static void toggleVisorDown() {
         PlayerEntity player = Minecraft.getInstance().player;
         if (player != null){
-            INanosuitModeCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+            INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+            if (nanosuitCapability.getMode() != NanosuitModes.VISOR){
+                oldMode = nanosuitCapability.getMode();
+            }
+            if (nanosuitCapability.getEnergy() >= 1){
+                nanosuitCapability.setMode(NanosuitModes.VISOR);
+            }
+        }
+    }
+
+    private static void cyclePowerPress() {
+        PlayerEntity player = Minecraft.getInstance().player;
+        if (player != null){
+            INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
             nanosuitCapability.cycleMode();
         }
     }

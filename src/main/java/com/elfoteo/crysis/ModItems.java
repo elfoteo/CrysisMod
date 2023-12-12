@@ -15,16 +15,16 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, "crysis");
 
     public static final RegistryObject<Item> NANOSUIT_HELMET = ITEMS.register("nanosuit_helmet",
-            () -> new ArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.HEAD, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
+            () -> new NanosuitArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.HEAD, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
 
     public static final RegistryObject<Item> NANOSUIT_CHESTPLATE = ITEMS.register("nanosuit_chestplate",
-            () -> new ArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.CHEST, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
+            () -> new NanosuitArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.CHEST, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
 
     public static final RegistryObject<Item> NANOSUIT_LEGGINGS = ITEMS.register("nanosuit_leggings",
-            () -> new ArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.LEGS, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
+            () -> new NanosuitArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.LEGS, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
 
     public static final RegistryObject<Item> NANOSUIT_BOOTS = ITEMS.register("nanosuit_boots",
-            () -> new ArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.FEET, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
+            () -> new NanosuitArmorItem(NanosuitArmorMaterial.NANOSUIT, EquipmentSlotType.FEET, new Item.Properties().tab(ItemGroup.TAB_COMBAT)));
 
     public static void RegisterArmor(IEventBus event){
         ITEMS.register(event);

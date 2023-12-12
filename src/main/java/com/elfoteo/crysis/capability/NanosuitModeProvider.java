@@ -9,10 +9,10 @@ import net.minecraftforge.common.util.LazyOptional;
 
 public class NanosuitModeProvider implements ICapabilitySerializable<INBT> {
 
-    @CapabilityInject(INanosuitModeCapability.class)
-    public static final Capability<INanosuitModeCapability> NANOSUIT_CAPABILITY = null;
+    @CapabilityInject(INanosuitCapability.class)
+    public static final Capability<INanosuitCapability> NANOSUIT_CAPABILITY = null;
 
-    private final LazyOptional<INanosuitModeCapability> instance = LazyOptional.of(NANOSUIT_CAPABILITY::getDefaultInstance);
+    private final LazyOptional<INanosuitCapability> instance = LazyOptional.of(NANOSUIT_CAPABILITY::getDefaultInstance);
 
     @Override
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
