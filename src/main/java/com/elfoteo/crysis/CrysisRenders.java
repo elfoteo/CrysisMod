@@ -1,19 +1,13 @@
 package com.elfoteo.crysis;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.FogRenderer;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
 
 import java.util.Objects;
 
@@ -49,20 +43,9 @@ public class CrysisRenders {
         FogRenderer.levelFogColor();
         RenderSystem.disableFog();
     });
-    protected static final RenderState.TransparencyState ADDITIVE_TRANSPARENCY = new RenderState.TransparencyState("additive_transparency", () -> {
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
-    }, () -> {
-        RenderSystem.disableBlend();
-        RenderSystem.defaultBlendFunc();
-    });
     protected static final RenderState.DiffuseLightingState DIFFUSE_LIGHTING = new RenderState.DiffuseLightingState(true);
     protected static final RenderState.OverlayState OVERLAY = new RenderState.OverlayState(true);
     protected static final RenderState.LightmapState LIGHTMAP = new RenderState.LightmapState(true);
-    protected static final RenderState.TransparencyState NO_TRANSPARENCY = new RenderState.TransparencyState("no_transparency", () -> {
-        RenderSystem.disableBlend();
-    }, () -> {
-    });
     protected static final RenderState.TransparencyState TRANSLUCENT_TRANSPARENCY = new RenderState.TransparencyState("translucent_transparency", () -> {
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -70,8 +53,9 @@ public class CrysisRenders {
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
     });
+    protected static final RenderState.CullState CULL = new RenderState.CullState(true);
     public static RenderType energySwirl(ResourceLocation p_228636_0_, float p_228636_1_, float p_228636_2_) {
-        return RenderType.create("energy_swirl", DefaultVertexFormats.NEW_ENTITY, 7,
+        return RenderType.create("crysis_energy_swirl", DefaultVertexFormats.NEW_ENTITY, 7,
                 256, false, true,
                 RenderType.State.builder().setTextureState(
                         new RenderState.TextureState(p_228636_0_, false, false))
@@ -80,7 +64,7 @@ public class CrysisRenders {
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                         .setDiffuseLightingState(DIFFUSE_LIGHTING)
                         .setAlphaState(DEFAULT_ALPHA)
-                        .setCullState(NO_CULL)
+                        .setCullState(CULL)
                         .setLightmapState(LIGHTMAP)
                         .setOverlayState(OVERLAY)
                         .createCompositeState(false));

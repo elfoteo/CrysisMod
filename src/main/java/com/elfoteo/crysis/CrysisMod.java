@@ -31,7 +31,6 @@ public class CrysisMod {
     public static final String MOD_ID = "crysis";
     public static final KeyBinding CYCLE_POWER = new KeyBinding("key.crysis.cycle_power", GLFW.GLFW_KEY_K, "key.category.crysis");
     public static final KeyBinding TOGGLE_VISOR = new KeyBinding("key.crysis.toggle_visor", GLFW.GLFW_KEY_LEFT_ALT, "key.category.crysis");
-    public static final float MARKER_CUBE_SIZE = .25f;
     private static final Map<String, NanosuitModes> nanosuitModeMap = new HashMap<>();
     public static final Color passive = new Color(7, 224, 56);
     public static final Color neutral = new Color(255, 166, 0);
@@ -45,7 +44,7 @@ public class CrysisMod {
     }
 
     public CrysisMod() {
-        // Register the mod for modloading
+        // Register the mod for mod loading
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.register(this);
         modEventBus.addListener(CrysisMod::onCommonSetup);
@@ -53,7 +52,6 @@ public class CrysisMod {
         // Register the event handler
         MinecraftForge.EVENT_BUS.register(NanosuitHandler.class);
         MinecraftForge.EVENT_BUS.register(ModItems.class);
-        //MinecraftForge.EVENT_BUS.register(ForgeEventSubscriber.class);
         MinecraftForge.EVENT_BUS.register(this.getClass());
         ModItems.RegisterArmor(modEventBus);
         ClientRegistry.registerKeyBinding(CYCLE_POWER);

@@ -31,8 +31,8 @@ public class NanosuitHandler {
             List<? extends PlayerEntity> players = world.players();
 
             for (PlayerEntity player : players) {
-                INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
                 try{
+                    INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
                     if (nanosuitCapability.getMode() == NanosuitModes.STEALTH) {
                         List<? extends LivingEntity> nearbyMonsters = world2.getNearbyEntities(
                                 MonsterEntity.class,
@@ -66,10 +66,15 @@ public class NanosuitHandler {
 
             // Check if the attacker is a player and the target is not null
             if (player != null && target != null) {
-                INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-                if (nanosuitCapability.getMode() == NanosuitModes.STEALTH){
-                    nanosuitCapability.setEnergy(nanosuitCapability.getEnergy()-25);
-                    nanosuitCapability.setMode(NanosuitModes.IDLE);
+                try {
+                    INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                    if (nanosuitCapability.getMode() == NanosuitModes.STEALTH){
+                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy()-25);
+                        nanosuitCapability.setMode(NanosuitModes.IDLE);
+                    }
+                }
+                catch (Exception ignored){
+
                 }
             }
         }
@@ -83,10 +88,21 @@ public class NanosuitHandler {
             if (world == null){
                 return;
             }
+            ServerWorld overworld = ServerLifecycleHooks.getCurrentServer().getLevel(World.OVERWORLD);
             for (PlayerEntity player: world.players()){
                 if (isWearingFullNanosuit(player)){
-                    INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-                    nanosuitCapability.stepInvisTransition();
+                    try{
+                        INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                        nanosuitCapability.stepInvisTransition();
+                        if (nanosuitCapability.getInvisTransition() >= 0.99){
+                            player.removeEffect(Effects.INVISIBILITY);
+                        }
+
+                        updatePlayerNanosuit(player, overworld);
+                    }
+                    catch (Exception ignored){
+
+                    }
                 }
             }
         }
@@ -94,90 +110,93 @@ public class NanosuitHandler {
 
     @SubscribeEvent
     public static void playerTick(TickEvent.PlayerTickEvent event){
-        if (event.phase == TickEvent.Phase.START){
-            ServerWorld overworld = ServerLifecycleHooks.getCurrentServer().getLevel(World.OVERWORLD);
-            updatePlayerNanosuit(event.player, overworld);
+        try {
+            if (event.phase == TickEvent.Phase.START){
+                ServerWorld overworld = ServerLifecycleHooks.getCurrentServer().getLevel(World.OVERWORLD);
+                updatePlayerNanosuit(event.player, overworld);
+            }
+        }
+        catch (Exception ex){
+
         }
     }
 
     private static void updatePlayerNanosuit(PlayerEntity player, World world){
         if (isWearingFullNanosuit(player)){
-            INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-            if (nanosuitCapability.getEnergy() <= 0){
-                nanosuitCapability.setMode(NanosuitModes.IDLE);
-            }
-            NanosuitModes mode = nanosuitCapability.getMode();
-            if (player instanceof ClientPlayerEntity){
-                CrysisMod.setNanosuitMode(player, mode);
-            }
-            else{
-                mode = CrysisMod.getNanosuitMode(player);
-            }
-
-            if (mode != NanosuitModes.ARMOR){
-                player.addEffect(new EffectInstance(Effects.JUMP, 19, 0, true, true));
-                if (mode != NanosuitModes.SPEED) {
-                    player.addEffect(new EffectInstance(Effects.MOVEMENT_SPEED, 19, 0, true, true));
+            try{
+                INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                if (nanosuitCapability.getEnergy() <= 0){
+                    nanosuitCapability.setMode(NanosuitModes.IDLE);
                 }
-            }
-            Minecraft.getInstance().options.gamma = 1000;
-            switch (mode) {
-                case SPEED:
-                    player.removeEffect(Effects.DAMAGE_RESISTANCE);
-                    player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
-                    player.removeEffect(Effects.INVISIBILITY);
-                    player.addEffect(new EffectInstance(Effects.MOVEMENT_SPEED, 19, 1, true, true));
-                    if (player.isSprinting()) {
-                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 3);
-                    } else if (isPlayerMoving(player)) {
-                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
-                    } else {
-                        if (world.getGameTime() % 4 == 0) {
+                NanosuitModes mode = nanosuitCapability.getMode();
+
+                if (mode != NanosuitModes.ARMOR){
+                    player.addEffect(new EffectInstance(Effects.JUMP, 19, 0, true, true));
+                    if (mode != NanosuitModes.SPEED) {
+                        player.addEffect(new EffectInstance(Effects.MOVEMENT_SPEED, 19, 0, true, true));
+                    }
+                }
+                Minecraft.getInstance().options.gamma = 1000;
+
+                switch (mode) {
+                    case SPEED:
+                        player.removeEffect(Effects.DAMAGE_RESISTANCE);
+                        player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
+                        //player.removeEffect(Effects.INVISIBILITY);
+                        player.addEffect(new EffectInstance(Effects.MOVEMENT_SPEED, 19, 1, true, true));
+                        if (player.isSprinting()) {
+                            nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 3);
+                        } else if (isPlayerMoving(player)) {
+                            nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
+                        } else {
+                            if (world.getGameTime() % 4 == 0) {
+                                nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 1);
+                            }
+                        }
+                        break;
+                    case ARMOR:
+                        player.removeEffect(Effects.MOVEMENT_SPEED);
+                        //player.removeEffect(Effects.INVISIBILITY);
+                        player.addEffect(new EffectInstance(Effects.DAMAGE_RESISTANCE, 19, 1, true, true));
+                        player.addEffect(new EffectInstance(Effects.MOVEMENT_SLOWDOWN, 19, 0, true, true));
+                        if (isPlayerMoving(player)) {
+                            nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
+                        }
+                        else{
                             nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 1);
                         }
-                    }
-                    break;
-                case ARMOR:
-                    player.removeEffect(Effects.MOVEMENT_SPEED);
-                    player.removeEffect(Effects.INVISIBILITY);
-                    player.addEffect(new EffectInstance(Effects.DAMAGE_RESISTANCE, 19, 1, true, true));
-                    player.addEffect(new EffectInstance(Effects.MOVEMENT_SLOWDOWN, 19, 0, true, true));
-                    if (isPlayerMoving(player)) {
-                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
-                    }
-                    else{
-                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 1);
-                    }
-                    break;
+                        break;
 
-                case STEALTH:
-                    player.removeEffect(Effects.DAMAGE_RESISTANCE);
-                    player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
-                    player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
-                    player.addEffect(new EffectInstance(Effects.INVISIBILITY, 19, 0, true, false));
-                    if (isPlayerMoving(player)) {
-                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
-                    } else {
-                        if (world.getGameTime() % 3 == 0) {
-                            nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 1);
+                    case STEALTH:
+                        player.removeEffect(Effects.DAMAGE_RESISTANCE);
+                        player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
+                        player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
+                        player.addEffect(new EffectInstance(Effects.INVISIBILITY, 60, 0, true, false));
+                        if (isPlayerMoving(player)) {
+                            nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 2);
+                        } else {
+                            if (world.getGameTime() % 3 == 0) {
+                                nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() - 1);
+                            }
                         }
-                    }
-                    break;
+                        break;
+                    case VISOR:
+                        player.removeEffect(Effects.DAMAGE_RESISTANCE);
+                        player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
+                        player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
+                        //player.removeEffect(Effects.INVISIBILITY);
+                        break; // Do not regenerate energy
 
-                case VISOR:
-                    player.removeEffect(Effects.DAMAGE_RESISTANCE);
-                    player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
-                    player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
-                    player.removeEffect(Effects.INVISIBILITY);
-                    break; // Do not regenerate energy
+                    default:
+                        player.removeEffect(Effects.DAMAGE_RESISTANCE);
+                        player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
+                        player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
+                        //player.removeEffect(Effects.INVISIBILITY);
+                        nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() + 4);
+                        break;
+                }
+            } catch (Exception ignored){
 
-                default:
-                    player.removeEffect(Effects.DAMAGE_RESISTANCE);
-                    player.removeEffect(Effects.MOVEMENT_SLOWDOWN);
-                    player.getActiveEffects().stream().filter(effect -> effect.getAmplifier() > 0).findAny().ifPresent(effect -> player.removeEffect(Effects.MOVEMENT_SPEED));
-                    player.removeEffect(Effects.INVISIBILITY);
-                    nanosuitCapability.setEnergy(nanosuitCapability.getEnergy() + 4);
-                    break;
             }
         }
         else{

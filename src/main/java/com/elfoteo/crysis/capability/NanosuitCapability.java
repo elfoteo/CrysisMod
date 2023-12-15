@@ -47,19 +47,16 @@ public class NanosuitCapability implements INanosuitCapability {
 
     @Override
     public float getInvisTransition() {
-        if (getMode() != NanosuitModes.STEALTH && Math.abs(invisTransition - 1) < 0.0001){
-            return 0;
-        }
         return invisTransition;
     }
 
     @Override
     public void stepInvisTransition() {
         if (getMode() != NanosuitModes.STEALTH){
-            invisTransition = (float) Math.max(0, Math.min(1, invisTransition+0.02));
+            invisTransition = (float) Math.max(0, Math.min(1, invisTransition+0.04));
         }
         else{
-            invisTransition = (float) Math.max(0, Math.min(1, invisTransition-0.2));
+            invisTransition = (float) Math.max(0, Math.min(1, invisTransition-0.04));
         }
     }
 

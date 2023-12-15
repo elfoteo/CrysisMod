@@ -37,50 +37,55 @@ public class NanosuitOverlay {
             Minecraft mc = Minecraft.getInstance();
             FontRenderer fontRenderer = mc.font;
 
-            INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-            String text = CrysisUtils.modeToString(nanosuitCapability.getMode());
+            try{
+                INanosuitCapability nanosuitCapability = player.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+                String text = CrysisUtils.modeToString(nanosuitCapability.getMode());
 
-            int x = 75;
-            int y = event.getWindow().getGuiScaledHeight() - 10 - fontRenderer.lineHeight;
+                int x = 75;
+                int y = event.getWindow().getGuiScaledHeight() - 10 - fontRenderer.lineHeight;
 
-            fontRenderer.draw(event.getMatrixStack(), text, x, y, 0xFFFFFF);
+                fontRenderer.draw(event.getMatrixStack(), text, x, y, 0xFFFFFF);
 
-            // Render the texture
-            // Calculate progress value between 0.0 and 1.0 (e.g., 0.5 for 50% progress)
-            float progress = Math.round(((float) nanosuitCapability.getEnergy() / nanosuitCapability.getMaxEnergy()) * 55) / 55.0f;
+                // Render the texture
+                // Calculate progress value between 0.0 and 1.0 (e.g., 0.5 for 50% progress)
+                float progress = Math.round(((float) nanosuitCapability.getEnergy() / nanosuitCapability.getMaxEnergy()) * 55) / 55.0f;
 
-            int xOffset = 5;
-            int yOffset = event.getWindow().getGuiScaledHeight() - 24;
+                int xOffset = 5;
+                int yOffset = event.getWindow().getGuiScaledHeight() - 24;
 
-            RenderSystem.disableDepthTest();
-            RenderSystem.depthMask(false);
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            mc.getTextureManager().bind(FRAME);
-            Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder bufferbuilder = tessellator.getBuilder();
-            bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-            bufferbuilder.vertex(0.0D + xOffset, 18 + yOffset, -90.0D).uv(0.0F, 1.0F).endVertex();
-            bufferbuilder.vertex(66.0D + xOffset, 18 + yOffset, -90.0D).uv(1.0F, 1.0F).endVertex();
-            bufferbuilder.vertex(66.0D + xOffset, 0.0D + yOffset, -90.0D).uv(1.0F, 0.0F).endVertex();
-            bufferbuilder.vertex(0.0D + xOffset, 0.0D + yOffset, -90.0D).uv(0.0F, 0.0F).endVertex();
-            tessellator.end();
+                RenderSystem.disableDepthTest();
+                RenderSystem.depthMask(false);
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+                mc.getTextureManager().bind(FRAME);
+                Tessellator tessellator = Tessellator.getInstance();
+                BufferBuilder bufferbuilder = tessellator.getBuilder();
+                bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+                bufferbuilder.vertex(0.0D + xOffset, 18 + yOffset, -90.0D).uv(0.0F, 1.0F).endVertex();
+                bufferbuilder.vertex(66.0D + xOffset, 18 + yOffset, -90.0D).uv(1.0F, 1.0F).endVertex();
+                bufferbuilder.vertex(66.0D + xOffset, 0.0D + yOffset, -90.0D).uv(1.0F, 0.0F).endVertex();
+                bufferbuilder.vertex(0.0D + xOffset, 0.0D + yOffset, -90.0D).uv(0.0F, 0.0F).endVertex();
+                tessellator.end();
 
-            // Calculate the width based on progress
-            double width = 55 * progress;
+                // Calculate the width based on progress
+                double width = 55 * progress;
 
-            mc.getTextureManager().bind(FILLED);
-            bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-            bufferbuilder.vertex(0.0D + xOffset + 11, 12 + yOffset + 3, -90.0D).uv(0.0F, 1.0F).endVertex();
-            bufferbuilder.vertex(width + xOffset + 11, 12 + yOffset + 3, -90.0D).uv(progress, 1.0F).endVertex();  // Adjust uv for progress
-            bufferbuilder.vertex(width + xOffset + 11, 0.0D + yOffset + 3, -90.0D).uv(progress, 0.0F).endVertex();  // Adjust uv for progress
-            bufferbuilder.vertex(0.0D + xOffset + 11, 0.0D + yOffset + 3, -90.0D).uv(0.0F, 0.0F).endVertex();
+                mc.getTextureManager().bind(FILLED);
+                bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+                bufferbuilder.vertex(0.0D + xOffset + 11, 12 + yOffset + 3, -90.0D).uv(0.0F, 1.0F).endVertex();
+                bufferbuilder.vertex(width + xOffset + 11, 12 + yOffset + 3, -90.0D).uv(progress, 1.0F).endVertex();  // Adjust uv for progress
+                bufferbuilder.vertex(width + xOffset + 11, 0.0D + yOffset + 3, -90.0D).uv(progress, 0.0F).endVertex();  // Adjust uv for progress
+                bufferbuilder.vertex(0.0D + xOffset + 11, 0.0D + yOffset + 3, -90.0D).uv(0.0F, 0.0F).endVertex();
 
-            tessellator.end();
+                tessellator.end();
 
-            RenderSystem.depthMask(true);
-            RenderSystem.enableDepthTest();
-            RenderSystem.disableBlend();
+                RenderSystem.depthMask(true);
+                RenderSystem.enableDepthTest();
+                RenderSystem.disableBlend();
+            }
+            catch (Exception ex){
+
+            }
         }
     }
 }

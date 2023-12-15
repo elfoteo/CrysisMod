@@ -9,16 +9,14 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import net.minecraft.client.entity.player.AbstractClientPlayerEntity;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderState;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.entity.LivingRenderer;
 import net.minecraft.client.renderer.entity.PlayerRenderer;
 import net.minecraft.client.renderer.entity.model.PlayerModel;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.Pose;
+import net.minecraft.potion.Effects;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
@@ -38,17 +36,21 @@ public abstract class PlayerRendererInject extends LivingRenderer<AbstractClient
             at = @At("HEAD"),
             cancellable = true)
     public void injectAtHead(AbstractClientPlayerEntity entity, float partialTicks, float rotationYaw, MatrixStack matrixStack, IRenderTypeBuffer buffer, int packedLight, CallbackInfo ci) {
-        INanosuitCapability nanosuitCapability = entity.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-        if (CrysisMod.isWearingFullNanosuit(entity)) {
-            if (nanosuitCapability.getMode().equals(NanosuitModes.STEALTH)) {
-                matrixStack.pushPose();
-                crysisMod$renderInvisibilityOverlay(matrixStack, buffer, entity, 0, packedLight, nanosuitCapability.getInvisTransition());
-                ci.cancel();
+        try{
+            INanosuitCapability nanosuitCapability = entity.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+            if (CrysisMod.isWearingFullNanosuit(entity)) {
+                if (entity.hasEffect(Effects.INVISIBILITY)) {
+                    matrixStack.pushPose();
+                    crysisMod$renderInvisibilityOverlay(matrixStack, buffer, entity, 0, packedLight, nanosuitCapability.getInvisTransition());
+                    ci.cancel();
+                }
+                else if (nanosuitCapability.getMode().equals(NanosuitModes.ARMOR)){
+                    matrixStack.pushPose();
+                    crysisMod$renderArmorOverlay(matrixStack, buffer, entity, 0, packedLight);
+                }
             }
-            else if (nanosuitCapability.getMode().equals(NanosuitModes.ARMOR)){
-                matrixStack.pushPose();
-                crysisMod$renderArmorOverlay(matrixStack, buffer, entity, 0, packedLight);
-            }
+        } catch (Exception ignored){
+
         }
     }
 
@@ -208,18 +210,24 @@ public abstract class PlayerRendererInject extends LivingRenderer<AbstractClient
         matrixStack.translate(0, -0.05, 0);
 
         IVertexBuilder vertexBuilder = buffer.getBuffer(CrysisRenders.energySwirl(getOverlayTexture(entity), f * -0.01F, f * 0.005F));
-        this.model.renderToBuffer(matrixStack, vertexBuilder, packedLight, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 0.5F);
+        this.model.renderToBuffer(matrixStack, vertexBuilder, packedLight, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F);
 
         matrixStack.popPose();
     }
 
     public ResourceLocation getOverlayTexture(AbstractClientPlayerEntity entity) {
-        INanosuitCapability nanosuitCapability = entity.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
-        if (nanosuitCapability.getMode().equals(NanosuitModes.STEALTH)) {
-            return new ResourceLocation("crysis", "textures/effects/stealth.png"); // creeper veil texture
+        try {
+            INanosuitCapability nanosuitCapability = entity.getCapability(NanosuitModeProvider.NANOSUIT_CAPABILITY).orElse(null);
+            if (entity.hasEffect(Effects.INVISIBILITY)) {
+                return new ResourceLocation("crysis", "textures/effects/stealth.png");
+            }
+            if (nanosuitCapability.getMode().equals(NanosuitModes.ARMOR)) {
+                return new ResourceLocation("crysis", "textures/effects/armor.png");
+            }
+        } catch (Exception ignored){
+
         }
-        else{
-            return new ResourceLocation("crysis", "textures/effects/armor.png"); // creeper veil texture
-        }
+
+        return new ResourceLocation("crysis", "textures/effects/stealth.png");
     }
 }
